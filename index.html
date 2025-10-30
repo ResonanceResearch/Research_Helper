@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interview App</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="header">
+      <h1>Interview App</h1>
+      <button id="reset-btn" class="secondary" title="Clear all answers for this session">Reset</button>
+      <div class="toggles">
+        <label class="switch">
+          <input type="checkbox" id="anon-toggle" />
+          <span class="slider"></span>
+        </label>
+        <span class="switch-label" title="When ON, no user identifier is sent to the server. Answers can still be saved locally.">Anonymize</span>
+
+        <label class="switch">
+          <input type="checkbox" id="personalize-toggle" checked />
+          <span class="slider"></span>
+        </label>
+        <span class="switch-label" title="When ON, the app can personalize chip suggestions using your previous answers on this device.">Personalize</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="question-card">
+        <div class="progress"><span id="progress-text">Question 1/—</span></div>
+        <h2 id="question-text">Loading questions…</h2>
+        
+        <div id="chips" class="chips"></div>
+
+        <div class="input-row">
+          <textarea id="answer-input" placeholder="Type your answer here…" rows="4"></textarea>
+          <button id="mic-btn" class="mic" title="Hold to dictate or click to toggle">🎤</button>
+        </div>
+
+        <div class="actions">
+          <button id="skip-btn" class="secondary">Skip</button>
+          <button id="prev-btn" class="secondary">Back</button>
+          <button id="next-btn" class="primary">Next</button>
+        </div>
+      </section>
+
+      <section class="review-card">
+        <h3>Your Answers</h3>
+        <div id="answers-list"></div>
+        <div class="actions">
+          <button id="download-btn" class="secondary">Download JSON</button>
+          <button id="submit-btn" class="primary">Submit</button>
+        </div>
+        <p class="hint">Local mode: answers also saved to browser storage. Connected mode: answers POSTed to /api/submit.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="status">Ready.</span>
+    </footer>
+  </div>
+<script>
+// Configure API base dynamically:
+
+
+window.API_BASE = "https://grant-interviewer-api.grant-interviewer.workers.dev";
+
+  
+
+</script>
+
+<script src="app.js?v=20251028-220241"></script>
+
+</body>
+</html>
