@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Faculty Research Mentor</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // 👉 Set this to your Worker endpoint (no trailing slash):
+    // e.g., "https://faculty-research-mentor-api.YOURNAME.workers.dev"
+    window.API_BASE = window.API_BASE || "";
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="header">
+      <h1>Faculty Research Mentor</h1>
+      <div class="controls">
+        <button id="resetBtn" class="ghost">Reset</button>
+        <button id="exportPlanBtn" class="primary">Export Action Plan</button>
+      </div>
+    </header>
+
+    <section class="progress">
+      <div class="progress-labels">
+        <span>Profile completeness</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar"><div id="progressFill"></div></div>
+      <div id="progressChecklist" class="progress-checklist"></div>
+    </section>
+
+    <section class="question-area">
+      <div id="questionText" class="question">Loading…</div>
+
+      <div id="chips" class="chips"></div>
+
+      <div class="input-row">
+        <input id="answerInput" type="text" placeholder="Type your answer…"/>
+        <button id="submitAnswerBtn" class="primary">Submit</button>
+      </div>
+
+      <div class="feedback-row">
+        <span>Was this question on‑target?</span>
+        <button id="fbGood" title="Good direction">👍</button>
+        <button id="fbBad" title="Off‑target">👎</button>
+      </div>
+
+      <div class="nav-row">
+        <button id="prevBtn" class="ghost">◀︎ Back</button>
+        <button id="nextBtn" class="ghost">Skip ▶︎</button>
+      </div>
+    </section>
+
+    <section class="resources">
+      <h2>Relevant Resources</h2>
+      <div class="resource-controls">
+        <input id="resourceSearch" placeholder="Search resources… e.g., 'genomics', 'funding', 'UCVM'"/>
+        <button id="refreshResourcesBtn" class="ghost">Refresh</button>
+      </div>
+      <div id="resourceList" class="resource-list"></div>
+    </section>
+
+    <section class="plan">
+      <h2>Draft Action Plan</h2>
+      <div id="actionPlan" class="plan-card">Your personalized plan will assemble as you go.</div>
+    </section>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "identity",
+    "text": "What\u2019s your full name and affiliation? (e.g., 'Jane Doe \u2014 University of Calgary, UCVM')",
+    "required": true,
+    "weight": 8
+  },
+  {
+    "id": "role_time",
+    "text": "What is your appointment type and time allocation? (e.g., clinical, teaching, research; % for each)",
+    "required": true,
+    "weight": 8
+  },
+  {
+    "id": "expertise",
+    "text": "Briefly list your domain expertise, methods/skills, and any unique assets (e.g., specialized clinics, datasets).",
+    "required": true,
+    "weight": 9
+  },
+  {
+    "id": "interests",
+    "text": "What research topics are you most interested in pursuing in the next 1\u20133 years?",
+    "required": true,
+    "weight": 7
+  },
+  {
+    "id": "constraints",
+    "text": "What constraints should we design around? (e.g., limited research time, lack of personnel, ethics hurdles)",
+    "required": true,
+    "weight": 6
+  },
+  {
+    "id": "populations",
+    "text": "Which populations, species, or systems can you access readily (e.g., patient types, farms, animal cohorts, archives)?",
+    "required": false,
+    "weight": 5
+  },
+  {
+    "id": "collab_env",
+    "text": "Who are your likely collaborators or units (local or external)? Any labs/facilities you can leverage?",
+    "required": false,
+    "weight": 6
+  },
+  {
+    "id": "funding_targets",
+    "text": "What funding programs might match your interests (internal, provincial, federal, foundations)?",
+    "required": false,
+    "weight": 5
+  },
+  {
+    "id": "outcomes",
+    "text": "What outcomes would define success in 12 months? (e.g., pilot data, 1\u20132 grants, papers, partnerships)",
+    "required": true,
+    "weight": 6
+  }
+]
