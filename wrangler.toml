@@ -1,15 +1,11 @@
-name = "faculty-research-mentor-api"
+name = "grant-interviewer-api"
 main = "worker.js"
+account_id = "9bbeb14a1c5c6644c670c22993887a68"
 compatibility_date = "2025-10-26"
 
 kv_namespaces = [
-  { binding = "ANSWERS", id = "KV_ID_IF_YOU_KEEP_KV" }
+  { binding = "ANSWERS", id = "90d8588438fb408c96ec2bee106c96d5" }
 ]
-
-[[d1_databases]]
-binding = "DB"
-database_name = "mentor-db"
-database_id = "REPLACE_WITH_D1_ID"
 
 [vars]
 OPENAI_MODEL = "gpt-5-mini"
