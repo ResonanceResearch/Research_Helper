@@ -3,8 +3,13 @@ main = "worker.js"
 compatibility_date = "2025-10-26"
 
 kv_namespaces = [
-  { binding = "ANSWERS", id = "REPLACE_WITH_YOUR_KV_ID" }
+  { binding = "ANSWERS", id = "KV_ID_IF_YOU_KEEP_KV" }
 ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mentor-db"
+database_id = "REPLACE_WITH_D1_ID"
 
 [vars]
 OPENAI_MODEL = "gpt-5-mini"
