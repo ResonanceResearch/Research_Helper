@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Faculty Research Mentor</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .chip{border:1px solid var(--border,#ddd);padding:6px 10px;border-radius:999px;cursor:pointer;font-size:14px}
+    .banner{padding:8px 12px;border:1px solid var(--border,#ddd);border-radius:10px;margin:8px 0;font-size:14px}
+    .bar{height:10px;background:#eee;border-radius:6px;overflow:hidden}
+    .bar > span{display:block;height:100%}
+    .primary{padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
+    .ghost{padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:transparent;cursor:pointer}
+    .input-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+    .question{font-size:18px}
+    .q-item{opacity:.85;padding:2px 0}
+    .spinner{opacity:.8}
+    #planOutput{white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-top:12px;display:none}
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="header">
+      <h1>Faculty Research Mentor</h1>
+      <div class="toolbar">
+        <button id="resetBtn" class="ghost" title="Reset this interview">Reset</button>
+        <button id="exportBtn" class="ghost" title="Export profile and answers as JSON">Export</button>
+      </div>
+    </header>
+
+    <section id="progress">
+      <div id="progressBanner" class="banner">Profile completeness: <strong id="progressPct">0%</strong></div>
+      <div id="progressBar" class="bar"><span id="progressFill" style="width:0%;background:#22c55e"></span></div>
+    </section>
+
+    <section id="interview">
+      <div class="question-row" style="display:flex;align-items:center;gap:8px;">
+        <div id="questionText" class="question">Loading…</div>
+        <span id="genLoader" class="spinner" style="display:none;">⏳</span>
+      </div>
+      <div id="chips" class="chips" aria-label="suggested chips"></div>
+      <div class="input-row">
+        <input id="answerInput" type="text" placeholder="Type or dictate your answer…">
+        <button id="voiceBtn" class="ghost" title="Dictate your answer">🎙️</button>
+        <button id="skipBtn" class="ghost" title="Skip this question">Skip</button>
+        <button id="submitAnswerBtn" class="primary">Submit</button>
+      </div>
+      <div class="toolbar">
+        <button id="planBtn" class="primary">Generate Plan</button>
+      </div>
+      <div id="planOutput"></div>
+    </section>
+
+    <section id="preview">
+      <h3>Interview questions</h3>
+      <div class="q-preview">
+        <div id="questionsPreview" class="questions-preview"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
