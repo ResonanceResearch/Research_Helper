@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Faculty Research Mentor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="header">
+      <h1>Faculty Research Mentor</h1>
+    </header>
+
+    <section id="progress">
+      <div id="progressBar" class="bar"><span id="progressFill" style="width:0%"></span></div>
+      <div id="progressLabel">0% complete</div>
+    </section>
+
+    <section id="interview">
+      <div class="question-row">
+        <div id="questionText" class="question">Loading…</div>
+        <span id="genLoader" class="spinner" style="display:none;margin-left:8px;">⏳</span>
+      </div>
+      <div class="input-row">
+        <input id="answerInput" type="text" placeholder="Type your answer…">
+        <button id="voiceBtn" class="ghost" title="Dictate your answer">🎙️</button>
+        <button id="submitAnswerBtn" class="primary">Submit</button>
+      </div>
+    </section>
+
+    <section id="preview">
+      <div class="q-preview">
+        <div id="questionsPreview" class="questions-preview"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
