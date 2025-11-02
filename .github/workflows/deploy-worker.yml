@@ -1,4 +1,4 @@
-name: Deploy Cloudflare Worker
+name: Deploy Cloudflare Worker (with KV auto-create)
 
 on:
   push:
@@ -7,21 +7,88 @@ on:
       - "worker.js"
       - "wrangler.toml"
       - ".github/workflows/deploy-worker.yml"
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      WORKER_NAME: grant-interviewer-api
+      KV_TITLE: grant-interviewer-answers   # human-friendly name for the namespace
+
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy with Wrangler
-        uses: cloudflare/wrangler-action@v3
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
-          secrets: |
-            OPENAI_API_KEY
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          node-version: "20"
+
+      - name: Install Wrangler
+        run: npm i -g wrangler@latest
+
+      # 1) Find or create the KV namespace via Cloudflare API (no dashboard)
+      - name: Ensure KV namespace exists (find or create)
+        id: kv
+        shell: bash
+        run: |
+          set -euo pipefail
+          # List namespaces
+          LIST_JSON=$(curl -sS -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces?per_page=100")
+          # Try to extract by title (exact match)
+          KV_ID=$(echo "$LIST_JSON" | jq -r --arg TITLE "$KV_TITLE" '.result[] | select(.title==$TITLE) | .id' | head -n1 || true)
+          if [ -z "${KV_ID:-}" ]; then
+            echo "No existing KV namespace titled '$KV_TITLE'. Creating..."
+            CREATE_JSON=$(curl -sS -X POST -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"title\":\"${KV_TITLE}\"}" \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces")
+            KV_ID=$(echo "$CREATE_JSON" | jq -r '.result.id')
+            if [ -z "${KV_ID:-}" ] || [ "$KV_ID" = "null" ]; then
+              echo "Failed to create KV namespace. Response:"
+              echo "$CREATE_JSON"
+              exit 1
+            fi
+            echo "Created KV namespace with id: $KV_ID"
+          else
+            echo "Found existing KV namespace id: $KV_ID"
+          fi
+          echo "KV_NAMESPACE_ID=$KV_ID" >> $GITHUB_OUTPUT
+
+      # 2) Inject IDs into a temp wrangler config (no permanent file change)
+      - name: Build ephemeral wrangler config
+        run: |
+          set -euo pipefail
+          cp wrangler.toml wrangler.deploy.toml
+          # Substitute placeholders with env values
+          sed -i "s|\${{ env.CF_ACCOUNT_ID }}|${CF_ACCOUNT_ID}|g" wrangler.deploy.toml
+          sed -i "s|\${{ env.KV_NAMESPACE_ID }}|${{ steps.kv.outputs.KV_NAMESPACE_ID }}|g" wrangler.deploy.toml
+
+          echo "==== wrangler.deploy.toml ===="
+          cat wrangler.deploy.toml
+
+      # 3) Set the Worker secret OPENAI_API_KEY non-interactively
+      - name: Set Worker secret (OPENAI_API_KEY)
+        run: |
+          printf "%s" "$OPENAI_API_KEY" | wrangler secret put OPENAI_API_KEY --config wrangler.deploy.toml --name $WORKER_NAME
+
+      # 4) Deploy
+      - name: Deploy Worker
+        run: |
+          wrangler deploy --config wrangler.deploy.toml --name $WORKER_NAME
+
+      # 5) Quick health check (prints JSON)
+      - name: Health check
+        run: |
+          echo "Health endpoint (expect ok:true):"
+          # It can take a few seconds after publish; retry briefly
+          for i in {1..6}; do
+            sleep 3
+            curl -fsS "https://$WORKER_NAME.${{ github.repository_owner }}.workers.dev/api/health" && exit 0 || true
+          done
+          echo "Health check failed (endpoint not ready yet). You can retry manually."
