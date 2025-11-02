@@ -13,6 +13,7 @@ export default {
       return json({ ok: true, has_kv: !!env.ANSWERS, has_openai: !!env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-5-mini" }, cors);
     }
 
+    
     // NEW: diagnostics route to help debug OpenAI failures quickly
     if (pathname === "/api/diag") {
       const checks = {
