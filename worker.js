@@ -172,7 +172,7 @@ async function callOpenAI(messages, env, jsonWanted){
     "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
     "Content-Type": "application/json"
   };
-  const body = { model, messages, temperature: 0.3 };
+  const body = { model, messages };
   if (jsonWanted) body.response_format = { type: "json_object" };
   const res = await fetch(url, { method:"POST", headers, body: JSON.stringify(body) });
   if (!res.ok) {
