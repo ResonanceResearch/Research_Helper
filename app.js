@@ -1,0 +1,297 @@
+/* Faculty Research Mentor – front-end logic */
+const QPATH = "questions.json";
+const RPATH = "resources.json";
+
+const els = {
+  qText: document.getElementById("questionText"),
+  chips: document.getElementById("chips"),
+  input: document.getElementById("answerInput"),
+  submit: document.getElementById("submitAnswerBtn"),
+  voiceBtn: document.getElementById("voiceBtn"),
+  fbGood: document.getElementById("fbGood"),
+  fbBad: document.getElementById("fbBad"),
+  prev: document.getElementById("prevBtn"),
+  next: document.getElementById("nextBtn"),
+  finish: document.getElementById("finishBtn"),
+  reset: document.getElementById("resetBtn"),
+  exportPlan: document.getElementById("exportPlanBtn"),
+  generatePlan: document.getElementById("generatePlanBtn"),
+  submitSession: document.getElementById("submitSessionBtn"),
+  progressFill: document.getElementById("progressFill"),
+  progressPct: document.getElementById("progressPct"),
+  progressChecklist: document.getElementById("progressChecklist"),
+  questionsPreview: document.getElementById("questionsPreview"),
+  resourceSearch: document.getElementById("resourceSearch"),
+  refreshResources: document.getElementById("refreshResourcesBtn"),
+  resourceList: document.getElementById("resourceList"),
+  actionPlan: document.getElementById("actionPlan"),
+};
+
+let QUESTIONS = [];
+let RESOURCES = [];
+let idx = 0;
+// Track original (default) questions for progress/checklist display
+let INITIAL_QUESTIONS = null;
+
+const ADAPTIVE_LIMIT = 6; // safety cap on extra generated questions
+const STATE = {
+  answers: [],
+  checklist: {},
+  history: [],
+  feedback: [],
+  finished: false,
+  planText: ""
+};
+
+function save(){ localStorage.setItem("frm_state", JSON.stringify(STATE)); }
+function load(){
+  const raw = localStorage.getItem("frm_state");
+  if(raw){ try{ Object.assign(STATE, JSON.parse(raw)); }catch{} }
+}
+function currentAnswerObj(){
+  const q = QUESTIONS[idx];
+  let o = STATE.answers.find(a => a.id === q.id);
+  if(!o){ o = { id: q.id, text: "", chipsAccepted: [], ts: Date.now() }; STATE.answers.push(o); }
+  return o;
+}
+function renderQuestion(){
+  const q = QUESTIONS[idx];
+  els.qText.textContent = q.text;
+  els.input.value = currentAnswerObj().text || "";
+  suggestChips(q).then(chips => renderChips(chips)).catch(()=> renderChips([]));
+  computeAndRenderProgress();
+  renderPlan();
+  renderQuestionsPreview();
+}
+function renderChips(chips){
+  els.chips.innerHTML = "";
+  chips.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = c;
+    b.onclick = () => {
+      els.input.value = (els.input.value ? els.input.value + "; " : "") + c;
+      const cur = currentAnswerObj();
+      cur.chipsAccepted.push(c);
+      save();
+    };
+    els.chips.appendChild(b);
+  });
+}
+async function fetchJSON(url){
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error("fetch failed");
+  return res.json();
+}
+async function suggestChips(q){
+  const body = {
+    questionText: q.text,
+    context: STATE.answers.map(a => ({ id: a.id, answer: a.text, chips: a.chipsAccepted }))
+  };
+  if(!window.API_BASE) return [];
+  const res = await fetch(`${window.API_BASE}/api/suggest`, {
+    method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
+  });
+  if(!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data.chips) ? data.chips.slice(0, 12) : [];
+}
+function submitAnswer(){
+  const q = QUESTIONS[idx];
+  const txt = els.input.value.trim();
+  const cur = currentAnswerObj();
+  cur.text = txt;
+  cur.ts = Date.now();
+  STATE.checklist[q.id] = !!txt;
+  save();
+  if(idx < QUESTIONS.length - 1){
+    STATE.history.push(idx);
+    idx++;
+    renderQuestion();
+  }else{
+    nextAdaptiveQuestion(true);
+  }
+}
+async function nextAdaptiveQuestion(optional=false){
+  const genCount = QUESTIONS.length - (INITIAL_QUESTIONS ? INITIAL_QUESTIONS.length : QUESTIONS.length);
+  if (genCount >= ADAPTIVE_LIMIT) { if(optional) finishInterview(); return; }
+  const loader = document.getElementById('genLoader');
+  if(loader) loader.style.display = 'inline-block';
+  const prevLabel = els.submit.textContent;
+  els.submit.disabled = true; els.submit.textContent = 'Loading…';
+  if(!window.API_BASE){ if(optional) finishInterview(); return; }
+  try{
+    const res = await fetch(`${window.API_BASE}/api/next-question`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ context: STATE.answers })
+    });
+    if(!res.ok){ if(optional) finishInterview(); return; }
+    const data = await res.json();
+    if(data && data.id && data.text){
+      QUESTIONS.push({ id: data.id, text: data.text, required: false, weight: 3 });
+      idx = QUESTIONS.length - 1;
+      renderQuestion();
+    }else if(optional){
+      finishInterview();
+    }
+  }catch{ if(optional) finishInterview(); } finally { if(loader) loader.style.display = 'none'; els.submit.disabled = false; els.submit.textContent = prevLabel; }
+}
+function back(){
+  if(STATE.history.length){
+    idx = STATE.history.pop();
+    renderQuestion();
+  }
+}
+function skip(){
+  if(idx < QUESTIONS.length - 1){
+    STATE.history.push(idx);
+    idx++;
+    renderQuestion();
+  }else{
+    nextAdaptiveQuestion(true);
+  }
+}
+function finishInterview(){
+  STATE.finished = true;
+  computeAndRenderProgress(true);
+  if(window.API_BASE) generatePlan();
+  save();
+}
+function resetAll(){
+  localStorage.removeItem("frm_state");
+  STATE.answers = [];
+  STATE.checklist = {};
+  STATE.history = [];
+  STATE.feedback = [];
+  STATE.finished = false;
+  STATE.planText = "";
+  idx = 0;
+  renderQuestion();
+}
+function thumbs(up){
+  const q = QUESTIONS[idx];
+  STATE.feedback.push({ questionId: q.id, type: up ? "up" : "down" });
+  save();
+}
+function checklistItems(){
+  const list = (INITIAL_QUESTIONS && Array.isArray(INITIAL_QUESTIONS)) ? INITIAL_QUESTIONS : QUESTIONS;
+  return list.map(q => ({ id: q.id, text: q.text, done: !!STATE.checklist[q.id], weight: q.weight || 1 }));
+}
+function computeAndRenderProgress(forceDone=false){
+  const items = checklistItems();
+  const total = items.reduce((s,i)=>s+i.weight,0) || 1;
+  const done = items.filter(i=>i.done).reduce((s,i)=>s+i.weight,0);
+  let pct = Math.round((done/total)*100);
+  if(forceDone || STATE.finished) pct = 100;
+  els.progressFill.style.width = pct + "%";
+  els.progressPct.textContent = pct + "%";
+  els.progressChecklist.innerHTML = "";
+  items.forEach(i => {
+    const div = document.createElement("div");
+    div.className = "progress-item";
+    div.innerHTML = `<span>${i.done ? "✅" : "⬜️"}</span><span>${i.text}</span>`;
+    els.progressChecklist.appendChild(div);
+  });
+}
+function renderQuestionsPreview(){
+  if(!els.questionsPreview) return;
+  els.questionsPreview.innerHTML = "";
+  QUESTIONS.forEach(q => {
+    const done = !!STATE.checklist[q.id];
+    const div = document.createElement("div");
+    div.className = "q-item" + (done ? " done" : "");
+    div.textContent = (q.required ? "★ " : "") + q.text;
+    els.questionsPreview.appendChild(div);
+  });
+}
+function renderPlan(){
+  // Keep a running summary for user context; the GPT plan is generated separately.
+  const a = Object.fromEntries(STATE.answers.map(x => [x.id, x.text]));
+  const lines = [];
+  if (a.identity) lines.push(`Identity: ${a.identity}`);
+  if (a.role_time) lines.push(`Appointment & time: ${a.role_time}`);
+  if (a.expertise) lines.push(`Expertise/assets: ${a.expertise}`);
+  if (a.interests) lines.push(`Near-term interests: ${a.interests}`);
+  if (a.constraints) lines.push(`Constraints: ${a.constraints}`);
+  if (a.populations) lines.push(`Accessible systems/cohorts: ${a.populations}`);
+  if (a.collab_env) lines.push(`Potential collaborators/facilities: ${a.collab_env}`);
+  if (a.funding_targets) lines.push(`Funding targets: ${a.funding_targets}`);
+  if (a.outcomes) lines.push(`12-month outcomes: ${a.outcomes}`);
+  if(STATE.planText){
+    els.actionPlan.textContent = STATE.planText;
+  }else{
+    els.actionPlan.textContent = lines.length ? lines.join("\n") : "Your personalized plan will assemble as you go, and will be generated on demand with GPT.";
+  }
+}
+async function loadResources(){
+  try{ RESOURCES = await fetchJSON(RPATH); renderResources(); }catch{}
+}
+function renderResources(){
+  const q = (els.resourceSearch.value || "").toLowerCase();
+  const matches = RESOURCES.filter(r => !q || r.title.toLowerCase().includes(q) || r.tags.some(t => t.toLowerCase().includes(q)) || (r.notes||"").toLowerCase().includes(q));
+  els.resourceList.innerHTML = "";
+  matches.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "resource";
+    div.innerHTML = `<strong>${r.title}</strong><br><a href="${r.url}" target="_blank" rel="noopener">${r.url}</a><p>${r.notes||""}</p>`;
+    els.resourceList.appendChild(div);
+  });
+}
+async function exportPlan(context, resources, env){
+  const sys = `You synthesize a practical, stepwise 90-day action plan for a new or clinical/teaching-heavy faculty member to launch/advance a research program.
+- Use the person's strengths/assets and address constraints via collaborations.
+- Include: focus areas, 2–3 project directions, 3–5 collaborators (local or external), specific facilities/resources, funding leads (with program names if possible), risk/mitigation, and immediate next steps by week.
+- Use the default resources and the resources added by the user. 
+- Keep it concise and skimmable with short bullets.`;
+
+/* Front-end only: prompts live in worker.js; app calls API endpoints. */
+async function generatePlan(){
+  const spinner = document.querySelector(".spinner");
+  if(spinner) spinner.classList.add("show");
+  try{
+    if(!window.API_BASE){ alert("Set window.API_BASE in index.html to generate plan with GPT."); return; }
+    const res = await fetch(`${window.API_BASE}/api/export`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ context: STATE.answers, resources: [] })
+    });
+    if(!res.ok){ alert("Plan generation failed."); return; }
+    const txt = await res.text();
+    STATE.planText = txt;
+    els.actionPlan.textContent = txt;
+    save();
+  } finally { if(spinner) spinner.classList.remove("show"); }
+}
+async function submitSession(){
+  try{
+    if(!window.API_BASE){ alert("Set window.API_BASE to submit session."); return; }
+    const res = await fetch(`${window.API_BASE}/api/submit`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ answers: STATE.answers, checklist: STATE.checklist, finished: STATE.finished, ts: Date.now() })
+    });
+    const data = await res.json();
+    if(!data.ok) alert("Submit failed."); else alert("Session submitted.");
+  }catch(e){ alert("Submit failed."); }
+}
+
+// Event wiring
+els.submit.addEventListener("click", submitAnswer);
+els.voiceBtn && els.voiceBtn.addEventListener("click", toggleVoice);
+els.prev.addEventListener("click", back);
+els.next.addEventListener("click", skip);
+els.finish.addEventListener("click", finishInterview);
+els.reset.addEventListener("click", resetAll);
+els.fbGood.addEventListener("click", () => thumbs(true));
+els.fbBad.addEventListener("click", () => thumbs(false));
+els.refreshResources.addEventListener("click", renderResources);
+els.resourceSearch.addEventListener("input", renderResources);
+els.exportPlan.addEventListener("click", exportPlan);
+els.generatePlan.addEventListener("click", generatePlan);
+els.submitSession.addEventListener("click", submitSession);
+
+(async function init(){
+  load();
+  try { QUESTIONS = await fetchJSON(QPATH); } catch { QUESTIONS = [{id:"fallback", text:"Describe your research background and interests.", required:true, weight:10}]; }
+  if (idx >= QUESTIONS.length) idx = 0;
+  loadResources();
+  renderQuestion();
+})();
