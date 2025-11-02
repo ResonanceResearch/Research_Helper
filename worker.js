@@ -119,9 +119,9 @@ async function fetchOpenAlex(profile, env){
 }
 
 async function suggestChips(questionText, context, openalex, env){
-  const sys = `You are an assistant that suggests concise options ("chips") for a faculty research mentoring interview.
+  const sys = `You are an assistant that suggests concise options ("chips") for a faculty research mentoring interview. Make chips relevant to the specific interview question.
 Use at most 6 tokens per chip. Prefer concrete items: methods, cohorts, collaborators, units, funding programs, facilities, next actions.
-Personalize using prior answers and OpenAlex concepts if provided.`;
+Personalize using prior answers.`;
 
   const prompt = [
     { role:"system", content: sys },
