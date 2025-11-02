@@ -170,23 +170,28 @@ return Array.from(new Set(fallbacks.filter(c => relevantToQuestion(questionText,
 
 }
 
-async function nextQuestion(context, env){
-  
-    const sys = `Generate ONE concise follow-up question (<= 14 words) for this mentoring interview.
+async function nextQuestion(context, env) {
+  const sys = `Generate ONE concise follow-up question (<= 14 words) for this mentoring interview.
 Goal: fill gaps (expertise, resources, collaborators, cohorts, funding, constraints, outcomes) and converge to an action plan.
 Avoid multi-part questions. Be crisp and specific.
 Return JSON: {"id":"q_<slug>","text":"...?"}`;
-
   const prompt = [
-    { role:"system", content: sys },
-    { role:"user", content: JSON.stringify({ context }) }
+    { role: "system", content: sys },
+    { role: "user", content: JSON.stringify({ context }) }
   ];
   try {
     const out = await callOpenAI(prompt, env, /*jsonWanted*/ true);
     if (out && out.id && out.text) return out;
-  } catch {}
-  return { id: "q_followup", text: "What specific dataset, clinic, or cohort could be mobilized in the next 3 months?" };
+  } catch (e) {
+    console.error("nextQuestion error:", e);
+  }
+  return {
+    id: "q_followup",
+    text:
+      "What specific dataset, clinic, or cohort could be mobilized in the next 3 months?"
+  };
 }
+
 
 async function exportPlan(context, resources, env){
   const sys = `You synthesize a practical, stepwise 90-day action plan for a new or clinical/teaching-heavy faculty member to launch/advance a research program.
