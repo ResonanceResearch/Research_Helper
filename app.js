@@ -226,15 +226,29 @@ function renderResources(){
     els.resourceList.appendChild(div);
   });
 }
-async function exportPlan(){
-  // Download the current plan text (GPT if generated, otherwise running summary)
-  const text = STATE.planText || els.actionPlan.textContent || "";
-  const blob = new Blob([text], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "action-plan.txt"; a.click();
-  URL.revokeObjectURL(url);
+async function exportPlan(context, resources, env){
+  const sys = `You synthesize a practical, stepwise 90-day action plan for a new or clinical/teaching-heavy faculty member to launch/advance a research program.
+- Use the person's strengths/assets and address constraints via collaborations.
+- Include: focus areas, 2–3 project directions, 3–5 collaborators (local or external), specific facilities/resources, funding leads (with program names if possible), risk/mitigation, and immediate next steps by week.
+- Keep it concise and skimmable with short bullets.`;
+
+  const prompt = [
+    { role:"system", content: sys },
+    { role:"user", content: JSON.stringify({ context, resources }) }
+  ];
+
+  try {
+    const out = await callOpenAI(prompt, env, /*jsonWanted*/ false);
+    return typeof out === "string" ? out : JSON.stringify(out, null, 2);
+  } catch (e) {
+    // Instead of silently returning fallback, expose the problem:
+    throw new Response(
+      "OpenAI call failed: " + (e?.message || String(e)),
+      { status: 502, headers: { "Content-Type": "text/plain; charset=utf-8" } }
+    );
+  }
 }
+
 async function generatePlan(){
   const spinner = document.querySelector(".spinner");
   if(spinner) spinner.classList.add("show");
