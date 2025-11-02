@@ -133,43 +133,47 @@ async function suggestChips(questionText, context, openalex, env){
     return cTokens.some(t => qTokens.includes(t));
   }
 
-  
-    const sys = `You suggest concise, question-specific "chips" (<=6 tokens each).
+  const sys = `You suggest concise, question-specific "chips" (<=6 tokens each).
 - Only include chips that directly help answer THIS question (not generic).
 - Prefer concrete items: methods, cohorts, collaborators, units, funding programs, facilities, next actions.
 - Personalize using prior answers and any OpenAlex topics IF they relate to the question.
 Return JSON: {"chips":["...","..."]}`;
 
-
   const prompt = [
     { role:"system", content: sys },
     { role:"user", content: JSON.stringify({ questionText, context, openalex }) }
   ];
+
   try {
     const out = await callOpenAI(prompt, env, /*jsonWanted*/ true);
-    
-if (out && Array.isArray(out.chips)) {
-  let list = out.chips.filter(c => relevantToQuestion(questionText, c));
-  // add OpenAlex topics that overlap with question
-  if (openalex && Array.isArray(openalex)) {
-    const oa = openalex.filter(c => relevantToQuestion(questionText, c));
-    list = list.concat(oa);
-  }
-  // add seed chips that are relevant
-  list = list.concat(SEED.filter(c => relevantToQuestion(questionText, c)));
-  // de-duplicate, trim to 12
-  const uniq = Array.from(new Set(list.map(c => c.trim()).filter(Boolean)));
-  return uniq.slice(0, 12);
-}
-if (out && Array.isArray(out)) {
-  const uniq = Array.from(new Set(out.map(c => c.trim()).filter(c => relevantToQuestion(questionText, c))));
-  if (uniq.length) return uniq.slice(0, 12);
-}
-const fallbacks = ["Pilot study","Local collaborator","Internal grant","UCVM facility","Co-authorship map","Method clinic"];
-if (openalex && openalex.length) fallbacks.unshift(openalex[0]);
-return Array.from(new Set(fallbacks.filter(c => relevantToQuestion(questionText, c)))).slice(0, 12);
 
+    if (out && Array.isArray(out.chips)) {
+      let list = out.chips.filter(c => relevantToQuestion(questionText, c));
+      // add OpenAlex topics that overlap with question
+      if (openalex && Array.isArray(openalex)) {
+        const oa = openalex.filter(c => relevantToQuestion(questionText, c));
+        list = list.concat(oa);
+      }
+      // add seed chips that are relevant
+      list = list.concat(SEED.filter(c => relevantToQuestion(questionText, c)));
+      // de-duplicate, trim to 12
+      const uniq = Array.from(new Set(list.map(c => c.trim()).filter(Boolean)));
+      return uniq.slice(0, 12);
+    }
+
+    if (out && Array.isArray(out)) {
+      const uniq = Array.from(new Set(out.map(c => c.trim()).filter(c => relevantToQuestion(questionText, c))));
+      if (uniq.length) return uniq.slice(0, 12);
+    }
+  } catch (e) {
+    // fall through to fallback
+  }
+
+  const fallbacks = ["Pilot study","Local collaborator","Internal grant","UCVM facility","Co-authorship map","Method clinic"];
+  if (openalex && openalex.length) fallbacks.unshift(openalex[0]);
+  return Array.from(new Set(fallbacks.filter(c => relevantToQuestion(questionText, c)))).slice(0, 12);
 }
+
 
 async function nextQuestion(context, env) {
   const sys = `Generate ONE concise follow-up question (<= 14 words) for this mentoring interview.
