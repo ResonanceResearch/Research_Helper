@@ -65,9 +65,9 @@ jobs:
         run: |
           set -euo pipefail
           cp wrangler.toml wrangler.deploy.toml
-          # Substitute placeholders with env values
-          sed -i "s|\${{ env.CF_ACCOUNT_ID }}|${CF_ACCOUNT_ID}|g" wrangler.deploy.toml
-          sed -i "s|\${{ env.KV_NAMESPACE_ID }}|${{ steps.kv.outputs.KV_NAMESPACE_ID }}|g" wrangler.deploy.toml
+          # Replace plain tokens; both values are hex, so no special chars to escape.
+          sed -i "s/__ACCOUNT_ID__/${CF_ACCOUNT_ID}/g" wrangler.deploy.toml
+          sed -i "s/__KV_NAMESPACE_ID__/${{ steps.kv.outputs.KV_NAMESPACE_ID }}/g" wrangler.deploy.toml
 
           echo "==== wrangler.deploy.toml ===="
           cat wrangler.deploy.toml
