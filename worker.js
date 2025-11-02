@@ -156,6 +156,7 @@ async function exportPlan(context, resources, env){
   const sys = `You synthesize a practical, stepwise 90-day action plan for a new or clinical/teaching-heavy faculty member to launch/advance a research program.
 - Use the person's strengths/assets and address constraints via collaborations.
 - Include: focus areas, 2–3 project directions, 3–5 collaborators (local or external), specific facilities/resources, funding leads (with program names if possible), risk/mitigation, and immediate next steps by week.
+- Use the default resources and the resources added by the user. 
 - Keep it concise and skimmable with short bullets.`;
   const prompt = [
     { role:"system", content: sys },
