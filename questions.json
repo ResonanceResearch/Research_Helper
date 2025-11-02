@@ -7,7 +7,7 @@
   },
   {
     "id": "role_time",
-    "text": "What is your appointment type and time allocation? (e.g., clinical, teaching, research; % for each)",
+    "text": "What is your appointment type and time allocation? (e.g., research %, teaching %, clinical %)",
     "required": true,
     "weight": 8
   },
@@ -31,13 +31,19 @@
   },
   {
     "id": "populations",
-    "text": "Which populations, species, or systems can you access readily (e.g., patient types, farms, animal cohorts, archives)?",
+    "text": "Which populations, species, or systems can you access readily (e.g., patient types, farms, animal cohorts, cases, datasets, archives)?",
     "required": false,
     "weight": 5
   },
   {
     "id": "collab_env",
-    "text": "Who are your likely collaborators or units (local or external)? Any labs/facilities you can leverage?",
+    "text": "Who are your likely collaborators or units (local or external)?",
+    "required": false,
+    "weight": 6
+  },
+  {
+    "id": "collab_env",
+    "text": "Are there any labs/facilities you can leverage?",
     "required": false,
     "weight": 6
   },
