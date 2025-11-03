@@ -356,7 +356,7 @@ els.submitSession.addEventListener("click", submitSession);
 })();
 
 
-/* === Latency wrapper patch (non-destructive) === */
+/* === Latency wrapper patch v2 (non-destructive, late-apply chips) === */
 (function(){
   // Prefetch slot
   if (typeof window.PREFETCHED_NEXT === "undefined") {
@@ -364,12 +364,6 @@ els.submitSession.addEventListener("click", submitSession);
   }
 
   // Helpers
-  function withTimeout(promise, ms, fallback){
-    return Promise.race([
-      promise,
-      new Promise(resolve => setTimeout(() => resolve(fallback), ms))
-    ]);
-  }
   async function prefetchNextQuestion(){
     try{
       if(!window.API_BASE || !window.STATE || !Array.isArray(window.STATE.answers)) return;
@@ -391,13 +385,35 @@ els.submitSession.addEventListener("click", submitSession);
   const _origRenderQ = typeof renderQuestion === "function" ? renderQuestion : null;
   const _origSubmit = typeof submitAnswer === "function" ? submitAnswer : null;
 
-  // Wrap suggestChips: skip on first question, cap to 1200ms otherwise
+  // Wrap suggestChips:
+  //  - Q0: return [] immediately (no chips for first question)
+  //  - Later: return [] immediately so UI unblocks, but also fetch chips in background;
+  //           when they arrive, apply them if still on the same question.
   if (_origSuggest) {
     window.suggestChips = function(q){
       try{
         if (typeof window.idx !== "number") window.idx = 0;
         if (window.idx === 0) return Promise.resolve([]);
-        return withTimeout(_origSuggest(q), 1200, []);
+
+        const questionId = q && q.id ? q.id : null;
+
+        // Start slow fetch in background:
+        Promise.resolve()
+          .then(() => _origSuggest(q))
+          .then(chips => {
+            if (!chips || !chips.length) return;
+            // Only apply if still on the same question
+            try{
+              const curQ = (window.QUESTIONS && typeof window.idx === "number") ? window.QUESTIONS[window.idx] : null;
+              if (curQ && curQ.id === questionId && typeof window.renderChips === "function") {
+                window.renderChips(chips);
+              }
+            } catch {}
+          })
+          .catch(() => {});
+
+        // Return quickly so renderQuestion() unblocks:
+        return Promise.resolve([]);
       } catch (e) {
         try { return _origSuggest(q); } catch { return Promise.resolve([]); }
       }
@@ -415,19 +431,14 @@ els.submitSession.addEventListener("click", submitSession);
   // Wrap submitAnswer: if end reached and a prefetched Q exists, append & show it
   if (_origSubmit) {
     window.submitAnswer = function(){
-      // capture pre-state
       const hadPrefetch = !!(window.PREFETCHED_NEXT && window.PREFETCHED_NEXT.id && window.PREFETCHED_NEXT.text);
-      const beforeIdx = typeof window.idx === "number" ? window.idx : 0;
-      const beforeLen = Array.isArray(window.QUESTIONS) ? window.QUESTIONS.length : 0;
 
-      // run original
       try { _origSubmit(); } catch(e){ console.error("submitAnswer orig failed:", e); }
 
-      // If still at the end and we have a prefetched next, inject it
       try {
         const afterIdx = typeof window.idx === "number" ? window.idx : 0;
         const afterLen = Array.isArray(window.QUESTIONS) ? window.QUESTIONS.length : 0;
-        const atEnd = (afterIdx >= afterLen - 1); // user was at end or we just finished
+        const atEnd = (afterIdx >= afterLen - 1);
 
         if (hadPrefetch && atEnd && window.PREFETCHED_NEXT && window.PREFETCHED_NEXT.id && window.PREFETCHED_NEXT.text) {
           window.QUESTIONS.push({
@@ -445,12 +456,12 @@ els.submitSession.addEventListener("click", submitSession);
             window.idx = window.QUESTIONS.length - 1;
           }
           if (typeof window.renderQuestion === "function") window.renderQuestion();
-          // prefetch the following one
           prefetchNextQuestion();
         }
       } catch {}
     };
   }
 })(); 
-/* === end latency wrapper patch === */
+/* === end latency wrapper patch v2 === */
+
 
