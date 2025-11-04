@@ -20,7 +20,7 @@ export default {
         ok: true,
         has_kv: !!env.ANSWERS,
         has_openai: !!env.OPENAI_API_KEY,
-        model: env.OPENAI_MODEL || "gpt-5-mini"
+        model: env.OPENAI_MODEL || "gpt-5-nano"
       };
       // Try a tiny OpenAI request if secret exists
       if (checks.has_openai) {
@@ -213,7 +213,7 @@ async function exportPlan(context, resources, env){
 }
 
 async function callOpenAI(messages, env, jsonWanted){
-  const model = env.OPENAI_MODEL || "gpt-5-mini";
+  const model = env.OPENAI_MODEL || "gpt-5-nano";
   const url = "https://api.openai.com/v1/chat/completions";
   const headers = {
     "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
