@@ -1,0 +1,6 @@
+name = "grant-interviewer-api"
+main = "worker.js"
+compatibility_date = "2025-10-26"
+[vars]
+OPENAI_MODEL = "gpt-5-mini"
+CHIPS_MODEL = "gpt-5-nano"
