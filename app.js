@@ -233,6 +233,7 @@ function renderQuestion(){
     els.qText.textContent = q.text || "…";
     els.input.value = currentAnswerObj().text || "";
 
+    renderChips([]);
     // Instant render of cached chips; otherwise fetch if appropriate (non-blocking)
     const cached = getCachedChips(q.id);
     if (cached) {
