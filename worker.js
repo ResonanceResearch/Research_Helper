@@ -10,7 +10,7 @@ export default {
     if (request.method === "OPTIONS") return new Response("", { headers: cors });
 
     if (pathname === "/api/health") {
-      return json({ ok: true, has_kv: !!env.ANSWERS, has_openai: !!env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-5-mini" }, cors);
+      return json({ ok: true, has_kv: !!env.ANSWERS, has_openai: !!env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-5-nano" }, cors);
     }
 
     
