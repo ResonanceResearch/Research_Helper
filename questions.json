@@ -7,25 +7,25 @@
   },
   {
     "id": "role_time",
-    "text": "What is your appointment type and time allocation? (e.g., research %, teaching %, clinical %)",
+    "text": "What is your appointment type and time allocation? (e.g., research %, teaching %, clinical %, service %)",
     "required": true,
     "weight": 8
   },
   {
     "id": "expertise",
-    "text": "Briefly list your domain expertise, methods/skills, and any unique assets (e.g., specialized clinics, datasets).",
+    "text": "Briefly list your domain expertise, methods/skills, and any unique assets (e.g., genomics, large data, specialized clinics, datasets).",
     "required": true,
     "weight": 9
   },
   {
     "id": "interests",
-    "text": "What research topics are you most interested in pursuing in the next 1\u20133 years?",
+    "text": "What research topics or proejcts are you most interested in pursuing in the next 1\u20133 years?",
     "required": true,
     "weight": 7
   },
   {
     "id": "constraints",
-    "text": "What constraints should we design around? (e.g., limited research time, lack of personnel, ethics hurdles)",
+    "text": "What constraints should we design around? (e.g., grant funding success, limited research time, lack of personnel, access to resources and labs)",
     "required": true,
     "weight": 6
   },
@@ -43,7 +43,7 @@
   },
   {
     "id": "facilities",
-    "text": "Are there any labs/facilities you can leverage?",
+    "text": "Are there any labs/facilities/resources you can leverage?",
     "required": false,
     "weight": 6
   },
